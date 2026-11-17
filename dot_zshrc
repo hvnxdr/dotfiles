@@ -8,4 +8,6 @@ path=("$HOME/.local/bin" $path)
 
 source "$ZSH/oh-my-zsh.sh"
 
+PROMPT="%{$fg[yellow]%}@%m%{$reset_color%} ${PROMPT}"
+
 command -v mise >/dev/null && eval "$(mise activate zsh)"
