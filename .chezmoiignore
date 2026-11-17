@@ -1,0 +1,8 @@
+.zshrc.broken
+.config/opencode/
+.config/systemd/
+.claude*
+.t3/
+.opencode/
+*_history
+.zcompdump*

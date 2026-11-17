@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Runs once per machine (re-runs if this file changes). Installs base packages,
+# mise, and makes zsh the login shell. Safe to re-run.
+set -euo pipefail
+
+{{ if eq .chezmoi.os "linux" -}}
+{{ if or (eq .chezmoi.osRelease.id "ubuntu") (eq .chezmoi.osRelease.id "debian") -}}
+PKGS=(zsh git tmux curl ca-certificates unzip)
+
+if [ "$(id -u)" -eq 0 ]; then SUDO=""
+elif command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then SUDO="sudo"
+elif command -v sudo >/dev/null 2>&1; then SUDO="sudo"   # will prompt
+else SUDO=""; echo "!! not root and no sudo: install manually: ${PKGS[*]}"; PKGS=()
+fi
+
+if [ "${#PKGS[@]}" -gt 0 ]; then
+  export DEBIAN_FRONTEND=noninteractive
+  $SUDO apt-get update -y
+  $SUDO apt-get install -y "${PKGS[@]}"
+fi
+{{ else -}}
+echo "!! unsupported distro {{ .chezmoi.osRelease.id }}: install zsh git tmux curl manually"
+{{ end -}}
+
+# mise (optional dev tool manager; .zshrc only activates it if present)
+if ! command -v mise >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/mise" ]; then
+  curl -fsSL https://mise.run | sh
+fi
+
+# default shell -> zsh
+ZSH_BIN="$(command -v zsh || true)"
+if [ -n "$ZSH_BIN" ] && [ "${SHELL:-}" != "$ZSH_BIN" ]; then
+  grep -qx "$ZSH_BIN" /etc/shells || echo "$ZSH_BIN" | ${SUDO:-} tee -a /etc/shells >/dev/null
+  ${SUDO:-} chsh -s "$ZSH_BIN" "$(id -un)" || echo "!! chsh failed; run: chsh -s $ZSH_BIN"
+fi
+{{ end -}}
