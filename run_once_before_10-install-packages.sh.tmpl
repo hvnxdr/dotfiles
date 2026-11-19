@@ -5,7 +5,7 @@ set -euo pipefail
 
 {{ if eq .chezmoi.os "linux" -}}
 {{ if or (eq .chezmoi.osRelease.id "ubuntu") (eq .chezmoi.osRelease.id "debian") -}}
-PKGS=(zsh git tmux curl ca-certificates unzip)
+PKGS=(zsh git tmux curl ca-certificates unzip ripgrep fd-find gcc make)
 
 if [ "$(id -u)" -eq 0 ]; then SUDO=""
 elif command -v sudo >/dev/null 2>&1 && sudo -n true 2>/dev/null; then SUDO="sudo"
@@ -25,6 +25,31 @@ echo "!! unsupported distro {{ .chezmoi.osRelease.id }}: install zsh git tmux cu
 # mise (optional dev tool manager; .zshrc only activates it if present)
 if ! command -v mise >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/mise" ]; then
   curl -fsSL https://mise.run | sh
+fi
+
+# neovim: apt's build is too old for kickstart's vim.pack, so use the release tarball
+NVIM_VERSION="v0.12.6"
+case "$(uname -m)" in
+  x86_64)  NVIM_ARCH="x86_64"; TS_ARCH="x64" ;;
+  aarch64) NVIM_ARCH="arm64";  TS_ARCH="arm64" ;;
+  *)       NVIM_ARCH="";       TS_ARCH="" ;;
+esac
+mkdir -p "$HOME/.local/bin" "$HOME/.local/opt"
+if [ -n "$NVIM_ARCH" ] && ! "$HOME/.local/bin/nvim" --version 2>/dev/null | grep -q "NVIM $NVIM_VERSION"; then
+  curl -fsSL "https://github.com/neovim/neovim/releases/download/$NVIM_VERSION/nvim-linux-$NVIM_ARCH.tar.gz" \
+    | tar -xz -C "$HOME/.local/opt"
+  ln -sf "$HOME/.local/opt/nvim-linux-$NVIM_ARCH/bin/nvim" "$HOME/.local/bin/nvim"
+fi
+
+# tree-sitter CLI (nvim-treesitter compiles parsers with it)
+if [ -n "$TS_ARCH" ] && ! command -v tree-sitter >/dev/null 2>&1 && [ ! -x "$HOME/.local/bin/tree-sitter" ]; then
+  curl -fsSL "https://github.com/tree-sitter/tree-sitter/releases/latest/download/tree-sitter-linux-$TS_ARCH.gz" \
+    | gunzip > "$HOME/.local/bin/tree-sitter" && chmod +x "$HOME/.local/bin/tree-sitter"
+fi
+
+# Debian/Ubuntu ship fd as fdfind
+if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
+  ln -sf "$(command -v fdfind)" "$HOME/.local/bin/fd"
 fi
 
 # default shell -> zsh
