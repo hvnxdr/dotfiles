@@ -1,3 +1,4 @@
+tmux() { if (( $# )); then command tmux "$@"; else command tmux new-session -A -s main; fi; }
 export ZSH="$HOME/.oh-my-zsh"
 ZSH_THEME="robbyrussell"
 plugins=()
@@ -6,8 +7,14 @@ typeset -U path
 path=("$HOME/.local/bin" $path)
 [ -d "$HOME/.opencode/bin" ] && path=("$HOME/.opencode/bin" $path)
 
+export BUN_INSTALL="$HOME/.bun"
+[ -d "$BUN_INSTALL/bin" ] && path=("$BUN_INSTALL/bin" $path)
+
+command -v nvim >/dev/null && export EDITOR=nvim VISUAL=nvim
+
 source "$ZSH/oh-my-zsh.sh"
 
 PROMPT="%{$fg[yellow]%}@%m%{$reset_color%} ${PROMPT}"
 
 command -v mise >/dev/null && eval "$(mise activate zsh)"
+[ -s "$BUN_INSTALL/_bun" ] && source "$BUN_INSTALL/_bun"

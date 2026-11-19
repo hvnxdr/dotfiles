@@ -6,3 +6,12 @@
 .opencode/
 *_history
 .zcompdump*
+README.md
+.zshrc.bak
+.gitconfig*
+.ssh/
+.config/gh/hosts.yml
+.config/rclone/
+.config/nvim/.git/
+.config/nvim/.github/
+.config/nvim/doc/tags
